@@ -41,4 +41,14 @@ app.post('/', async (req, res) => {
   }
 })
 
+app.get('/:short', async (req, res) => {
+  try {
+    const { short } = req.params
+    const transURL = await ShortURL.findOne({ shortURL: short }).lean()
+    res.redirect(transURL.longURL)
+  } catch (err) {
+    console.log(err)
+  }
+})
+
 app.listen(PORT, () => console.log(`Express is listening on http://localhost:${PORT}`))
