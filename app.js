@@ -1,6 +1,6 @@
 const express = require('express')
 const exphbs = require('express-handlebars')
-const expvalid = require('express-validator')
+const { body, validationResult } = require('express-validator')
 const mongoose = require('mongoose')
 
 const ShortURL = require('./models/shorturl')
@@ -26,20 +26,38 @@ app.get('/', (req, res) => {
   res.render('index')
 })
 
-app.post('/', async (req, res) => {
-  try {
-    const { longUrl } = req.body
-    const urlCount = await ShortURL.countDocuments()
-    const transURL = {
-      longURL: longUrl,
-      shortURL: getShortUrl(urlCount)
+// 輸入的東西會進來這裡，所以先做個驗證
+app.post('/'
+  , body('longUrl').isURL().withMessage('網址無效，請輸入有效的網址')
+  , async (req, res) => {
+    const errors = validationResult(req)
+    // 輸入的不是網址會進來這裡
+    if (!errors.isEmpty()) {
+      const [{ msg }] = errors.errors
+      return res.status(422).render('index', { errorMsg: msg })
     }
-    await ShortURL.create(transURL)
-    res.render('index')
-  } catch (err) {
-    console.log(err)
-  }
-})
+    try {
+      let transURL
+      const { longUrl } = req.body
+      const isExist = await ShortURL.exists({ longURL: longUrl })
+      // 檢查網址有沒有在資料庫內，有就直接回傳資料庫內的短網址
+      if (!isExist) {
+        const urlCount = await ShortURL.countDocuments()
+        transURL = {
+          longURL: longUrl,
+          shortURL: getShortUrl(urlCount)
+        }
+        await ShortURL.create(transURL)
+      } else {
+        transURL = await ShortURL.findOne({ longURL: longUrl }).lean()
+      }
+      const hostname = process.env.PORT ? req.hostname : 'localhost:3000'
+      const shortenUrl = `${req.protocol}://${hostname}/${transURL.shortURL}`
+      res.render('index', { shortenUrl })
+    } catch (err) {
+      console.log(err)
+    }
+  })
 
 app.get('/:short', async (req, res) => {
   try {
@@ -48,6 +66,7 @@ app.get('/:short', async (req, res) => {
     res.redirect(transURL.longURL)
   } catch (err) {
     console.log(err)
+    return res.redirect('/')
   }
 })
 
