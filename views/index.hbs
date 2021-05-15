@@ -1,4 +1,18 @@
-<form action="/" method="post">
-  <input type="url" name="longUrl" id="long-url" placeholder="Paste URL you want to shorten">
-  <button type="submit">Create Short URL</button>
-</form>
+<body class="vh-100" style="background: #ddd;">
+  <div class="d-flex flex-column justify-content-center align-items-center" style="height: 90%;">
+    <h2 class="text">Shorten URL</h2>
+    <div class="card w-50 p-4">
+      <form action="/" method="post" class="input-group">
+        <input type="url" name="longUrl" placeholder="Paste URL you want to shorten" class="form-control {{#if errorMsg }} is-invalid {{/if}}" required>
+        <button type="submit" class="btn btn-primary">Create Sho..</button>
+        <div class="invalid-feedback">
+          {{ errorMsg }}
+        </div>
+      </form>
+      <div class="input-group mt-4">
+        <input type="text" placeholder="URL will generated here" class="form-control" id="copy-text" value="{{ shortenUrl }}" readonly>
+        <button class="btn btn-success" id="copy-btn">Copy</button>
+      </div>
+    </div>
+  </div>
+</body>
